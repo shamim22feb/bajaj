@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PDF RAG Chat</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #chat { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: auto; margin-top: 20px; }
+        .msg { margin: 5px 0; }
+        .user { font-weight: bold; color: blue; }
+        .bot { font-weight: bold; color: green; }
+    </style>
+</head>
+<body>
+    <h2>Upload a PDF</h2>
+    <form id="uploadForm">
+        <input type="file" name="pdf" accept="application/pdf" required />
+        <button type="submit">Upload</button>
+    </form>
+
+    <h2>Chat</h2>
+    <div id="chat"></div>
+    <input type="text" id="userInput" placeholder="Ask a question..." style="width:80%" />
+    <button onclick="sendMessage()">Send</button>
+
+    <script>
+        const chatBox = document.getElementById("chat");
+
+        document.getElementById("uploadForm").onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const res = await fetch("/upload", { method: "POST", body: formData });
+            const data = await res.json();
+            alert(data.message || data.error);
+        };
+
+        async function sendMessage() {
+            const input = document.getElementById("userInput");
+            const message = input.value.trim();
+            if (!message) return;
+
+            chatBox.innerHTML += `<div class="msg user">You: ${message}</div>`;
+            input.value = "";
+
+            const res = await fetch("/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message })
+            });
+            const data = await res.json();
+
+            if (data.answer) {
+                chatBox.innerHTML += `<div class="msg bot">Bot: ${data.answer}</div>`;
+            } else {
+                chatBox.innerHTML += `<div class="msg bot">Error: ${data.error}</div>`;
+            }
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    </script>
+</body>
+</html>
